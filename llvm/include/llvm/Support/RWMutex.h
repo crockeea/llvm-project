@@ -23,6 +23,13 @@
 #define LLVM_USE_RW_MUTEX_IMPL
 #endif
 
+#if __has_attribute(no_thread_safety_analysis)
+#define LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS                                \
+  __attribute__((no_thread_safety_analysis))
+#else
+#define LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS
+#endif
+
 namespace llvm {
 namespace sys {
 
@@ -106,7 +113,7 @@ template <bool mt_only> class SmartRWMutex {
   unsigned writers = 0;
 
 public:
-  bool lock_shared() {
+  bool lock_shared() LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS {
     if (!mt_only || llvm_is_multithreaded()) {
       impl.lock_shared();
       return true;
@@ -118,7 +125,7 @@ public:
     return true;
   }
 
-  bool unlock_shared() {
+  bool unlock_shared() LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS {
     if (!mt_only || llvm_is_multithreaded()) {
       impl.unlock_shared();
       return true;
@@ -133,7 +140,7 @@ public:
 
   bool try_lock_shared() { return impl.try_lock_shared(); }
 
-  bool lock() {
+  bool lock() LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS {
     if (!mt_only || llvm_is_multithreaded()) {
       impl.lock();
       return true;
@@ -146,7 +153,7 @@ public:
     return true;
   }
 
-  bool unlock() {
+  bool unlock() LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS {
     if (!mt_only || llvm_is_multithreaded()) {
       impl.unlock();
       return true;
@@ -200,5 +207,7 @@ using ScopedWriter = SmartScopedWriter<false>;
 
 } // end namespace sys
 } // end namespace llvm
+
+#undef LLVM_RWMUTEX_NO_THREAD_SAFETY_ANALYSIS
 
 #endif // LLVM_SUPPORT_RWMUTEX_H
